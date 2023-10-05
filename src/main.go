@@ -1,38 +1,19 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
+	"golangDB/src/server"
 	"log"
+	"net/http"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/mux"
 )
 
 func main() {
-	connectionString := "golang:golang@/devbook?charset=utf8&parseTime=True&loc=Local"
 
-	db, err := sql.Open("mysql", connectionString)
+	router := mux.NewRouter()
+	router.HandleFunc("/users", server.CreateUser).Methods(http.MethodPost)
+	router.HandleFunc("/users", server.RetrieveUsers).Methods(http.MethodGet)
 
-	if err != nil {
-		fmt.Println("Open error")
-		log.Fatal(err)
-	}
-
-	defer db.Close()
-
-	err = db.Ping()
-
-	if err != nil {
-		fmt.Println("Ping error")
-		log.Fatal(err)
-	}
-
-	rows, err := db.Query("select * from users")
-
-	if err != nil {
-		fmt.Println("Query error")
-		log.Fatal(err)
-	}
-
-	fmt.Println(rows)
+	log.Fatal(http.ListenAndServe(":5000", router))
 }
