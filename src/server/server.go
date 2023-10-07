@@ -189,3 +189,32 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+
+	ID := params["userId"]
+
+	db, err := database.Connect()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Could not connect to data base"))
+		return
+	}
+	defer db.Close()
+
+	statement, err := db.Prepare("delete from users where id = ?")
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Could not prepare statement"))
+		return
+	}
+	defer statement.Close()
+
+	if _, err := statement.Exec(ID); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Could not delete user"))
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

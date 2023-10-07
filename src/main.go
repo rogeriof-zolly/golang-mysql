@@ -16,6 +16,7 @@ func main() {
 	router.HandleFunc("/users", server.RetrieveUsers).Methods(http.MethodGet)
 	router.HandleFunc("/users/{userId}", server.RetrieveUserById).Methods(http.MethodGet)
 	router.HandleFunc("/users/{userId}", server.UpdateUser).Methods(http.MethodPut)
+	router.HandleFunc("/users/{userId}", server.DeleteUser).Methods(http.MethodDelete)
 
 	log.Fatal(http.ListenAndServe(":5000", router))
 }
