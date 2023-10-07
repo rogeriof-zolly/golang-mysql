@@ -144,3 +144,48 @@ func RetrieveUserById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+
+	ID := params["userId"]
+
+	updatedUser, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Could not read the request body"))
+		return
+	}
+
+	var newUserData user
+
+	if err := json.Unmarshal(updatedUser, &newUserData); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Could not unmarshal JSON"))
+		return
+	}
+
+	db, err := database.Connect()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Could not connect to database"))
+		return
+	}
+	defer db.Close()
+
+	statement, err := db.Prepare("update users set name = ?, email = ? where id = ?")
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Could not create statement"))
+		return
+	}
+	defer statement.Close()
+
+	if _, err = statement.Exec(newUserData.Name, newUserData.Email, ID); err != nil {
+		w.WriteHeader(http.StatusBadGateway)
+		w.Write([]byte("Could not execute update statement"))
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
