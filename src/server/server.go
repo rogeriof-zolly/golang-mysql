@@ -1,11 +1,14 @@
 package server
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"golangDB/src/database"
 	"io"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 type user struct {
@@ -100,6 +103,42 @@ func RetrieveUsers(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(users); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Error when converting slice to JSON"))
+		return
+	}
+}
+
+func RetrieveUserById(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+
+	userId := params["userId"]
+
+	db, err := database.Connect()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Error when connecting to database"))
+		return
+	}
+	defer db.Close()
+
+	row := db.QueryRow("select * from users where id = ?", userId)
+
+	var user user
+
+	if err := row.Scan(&user.ID, &user.Name, &user.Email); err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte("User not found!"))
+			return
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Error when scanning row"))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(user); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Error when converting slice to JSON"))
 		return
